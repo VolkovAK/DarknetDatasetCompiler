@@ -5,6 +5,7 @@ import random
 import importlib
 import cv2
 import argparse
+from tqdm.auto import  tqdm
 
 
 def is_image(name):
@@ -67,17 +68,17 @@ class Compiler:
         original_path = source['path']
         random.seed(42)
         train_part = source['split']
-        self.debug(f'Scanning {original_path}...')
+        self.debug(f'Scanning...')
         imgs = [j for j in os.listdir(original_path) if is_image(j)]
         train_data = []
         val_data = []
-        self.debug(f'Splitting {original_path}...')
-        for img_name in imgs:
+        self.debug(f'Splitting...')
+        for img_name in tqdm(imgs):
             if 'use_part' in source:
                 if random.randint(0, 100) > source['use_part']:
                     continue
 
-            txt_file = os.path.join(original_path, os.path.splitext(img_name)[0] + 'txt')
+            txt_file = os.path.join(original_path, os.path.splitext(img_name)[0] + '.txt')
             img_file = os.path.join(original_path, img_name)
             if os.path.exists(txt_file) and os.path.exists(img_file):
                 if random.randint(0, 100) < train_part:
