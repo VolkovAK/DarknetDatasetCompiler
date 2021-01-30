@@ -1,0 +1,53 @@
+{
+	"name": "vehicle_detection_dataset",
+	"description": "Dataset for detecting vehicles from CCTV cameras",
+	"target_dir": "/home/admin/darknet/data/",
+	"sources": [
+		{
+			"use": true,
+			"name": "vehicle_COCO",
+			"path": "/home/admin/COCO_vehicles/",
+			"description": "Images with vehicles from COCO dataset",
+			"split": 80
+		},
+		{
+			"use": true,
+			"name": "vehicle_COCO_aug",
+			"path": "/home/admin/COCO_vehicles/",
+			"description": "Images with vehicles from COCO dataset with augmentations",
+			"split": 80,
+			"augmentations": ["contrast_brightness", "noise"]
+		},
+		{
+			"use": true,
+			"name": "KITTI_dataset",
+			"path": "/home/admin/kitti/images/",
+			"description": "Dataset from KITTI",
+			"split": 90,
+			"use_part": 20
+		},
+		{
+			"use": true,
+			"name": "Our_frames",
+			"path": "/home/admin/my_dataset",
+			"description": "Frames from our camera, my annotation",
+			"split": 80,
+			"multiplier": 5
+		},
+		{
+			"use": true,
+			"name": "Old_dataset",
+			"path": "/home/admin/old_dataset",
+			"description": "Old dataset with predefined train/test split",
+			"train": "/home/admin/old_dataset/train.txt",
+                        "valid": "/home/admin/old_dataset/val.txt"
+		},
+		{
+			"use": false,
+			"name": "bad_data",
+			"path": "/home/admin/untrusted_dataset/",
+			"description": "Dataset with bad pseudolabeled annotation",
+			"split": 80
+		}
+	]
+}
