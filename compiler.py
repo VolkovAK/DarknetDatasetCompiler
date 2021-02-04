@@ -5,7 +5,7 @@ import random
 import importlib
 import cv2
 import argparse
-from tqdm.auto import  tqdm
+from tqdm.auto import tqdm
 
 
 def is_image(name):
@@ -86,11 +86,13 @@ class Compiler:
                 else:
                     val_data.append(os.path.join(new_symlink_path, img_name))
 
+                random_state = random.getstate()
                 if augs is not None:
                     img = cv2.imread(img_file)
                     for aug in augs:
                         img = aug.do(img)
                     cv2.imwrite(os.path.join(new_symlink_path, img_name), img)
+                random.setstate(random_state)
 
         return train_data, val_data
 
