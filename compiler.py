@@ -73,12 +73,15 @@ class Compiler:
         train_data = []
         val_data = []
         self.debug(f'Splitting...')
-        for img_name in tqdm(imgs):
-            if 'use_part' in source:
-                if random.randint(0, 100) > source['use_part']:
-                    continue
+        random.shuffle(imgs)
+        if 'use_part' in source:
+            imgs = imgs[:int(source['use_part'] / 100 * len(imgs))]
+        random.seed(42)
 
-            txt_file = os.path.join(original_path, os.path.splitext(img_name)[0] + '.txt')
+        for img_name in tqdm(imgs):
+
+            txt_name = os.path.splitext(img_name)[0] + '.txt'
+            txt_file = os.path.join(original_path, txt_name)
             img_file = os.path.join(original_path, img_name)
             if os.path.exists(txt_file) and os.path.exists(img_file):
                 if random.randint(0, 100) < train_part:
@@ -92,6 +95,7 @@ class Compiler:
                     for aug in augs:
                         img = aug.do(img)
                     cv2.imwrite(os.path.join(new_symlink_path, img_name), img)
+                    shutil.copy(txt_file, os.path.join(new_symlink_path, txt_name))
                 random.setstate(random_state)
 
         return train_data, val_data
@@ -134,7 +138,8 @@ class Compiler:
             if self.use_symlink and augs is None:
                 os.symlink(original_path, new_symlink_path)
             else:
-                shutil.copytree(original_path, new_symlink_path)
+                os.makedirs(new_symlink_path, exist_ok=True)
+                #shutil.copytree(original_path, new_symlink_path)
 
             if 'train' in source and 'valid' in source:
                 train_data, val_data = self.build_predefined_split(source, new_symlink_path, augs)
