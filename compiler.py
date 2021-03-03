@@ -54,10 +54,10 @@ class Compiler:
 
         with open(source['train'], 'r') as f:
             train_data = list(filter(lambda x: len(x) > 0, f.read().split('\n')))
-        train_data = [os.path.join(new_symlink_path, os.path.basename(t)) for t in train_data]
+        train_data = [os.path.join(os.path.abspath(new_symlink_path), os.path.basename(t)) for t in train_data]
         with open(source['valid'], 'r') as f:
             val_data = list(filter(lambda x: len(x) > 0, f.read().split('\n')))
-        val_data = [os.path.join(new_symlink_path, os.path.basename(t)) for t in val_data]
+        val_data = [os.path.join(os.path.abspath(new_symlink_path), os.path.basename(t)) for t in val_data]
 
         if augs is not None:
             print('https://github.com/VolkovAK/DarknetDatasetCompiler')
@@ -68,11 +68,11 @@ class Compiler:
         original_path = source['path']
         random.seed(42)
         train_part = source['split']
-        self.debug(f'Scanning...')
+        self.debug(f'Scanning {original_path}...')
         imgs = [j for j in os.listdir(original_path) if is_image(j)]
         train_data = []
         val_data = []
-        self.debug(f'Splitting...')
+        self.debug(f'Splitting {original_path}...')
         random.shuffle(imgs)
         if 'use_part' in source:
             imgs = imgs[:int(source['use_part'] / 100 * len(imgs))]
@@ -85,9 +85,9 @@ class Compiler:
             img_file = os.path.join(original_path, img_name)
             if os.path.exists(txt_file) and os.path.exists(img_file):
                 if random.randint(0, 100) < train_part:
-                    train_data.append(os.path.join(new_symlink_path, img_name))
+                    train_data.append(os.path.join(os.path.abspath(new_symlink_path), img_name))
                 else:
-                    val_data.append(os.path.join(new_symlink_path, img_name))
+                    val_data.append(os.path.join(os.path.abspath(new_symlink_path), img_name))
 
                 random_state = random.getstate()
                 if augs is not None:
@@ -95,6 +95,9 @@ class Compiler:
                     for aug in augs:
                         img = aug.do(img)
                     cv2.imwrite(os.path.join(new_symlink_path, img_name), img)
+                    shutil.copy(txt_file, os.path.join(new_symlink_path, txt_name))
+                if augs is None and self.use_symlink is False:
+                    shutil.copy(img_file, os.path.join(new_symlink_path, img_name))
                     shutil.copy(txt_file, os.path.join(new_symlink_path, txt_name))
                 random.setstate(random_state)
 
