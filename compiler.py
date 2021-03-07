@@ -191,6 +191,7 @@ class Compiler:
 
             total_train += len(train_data)
             total_val += len(val_data)
+            total_test += len(test_data)
 
         train_txt.close()
         val_txt.close()
