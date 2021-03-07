@@ -9,6 +9,11 @@ from tqdm.auto import tqdm
 
 
 def is_image(name):
+    """
+    Checks is given file an image
+    :param name: filename
+    :return: True is file is image
+    """
     extension = name.split('.')[-1]
     if extension.lower() in ['jpg', 'png', 'bmp', 'jpeg']:
         return True
@@ -16,6 +21,12 @@ def is_image(name):
 
 
 def build_augmentations(source):
+    """
+    Creates list of augmentations classes.
+
+    :param source: name of augmentation
+    :return: list of augs
+    """
     aug_names = source['augmentations']
     augs = []
     for aug in aug_names:
@@ -50,28 +61,34 @@ class Compiler:
             self.debug(f'Successfully done.')
 
     def build_predefined_split(self, source, new_symlink_path, augs):
-        self.debug(f'Taking train.txt and val.txt from cfg...')
-
+        self.debug(f'Taking train.txt, val.txt and test.txt from cfg...')
         with open(source['train'], 'r') as f:
             train_data = list(filter(lambda x: len(x) > 0, f.read().split('\n')))
         train_data = [os.path.join(os.path.abspath(new_symlink_path), os.path.basename(t)) for t in train_data]
         with open(source['valid'], 'r') as f:
             val_data = list(filter(lambda x: len(x) > 0, f.read().split('\n')))
         val_data = [os.path.join(os.path.abspath(new_symlink_path), os.path.basename(t)) for t in val_data]
+        if 'test' in source:
+            with open(source['test'], 'r') as f:
+                test_data = list(filter(lambda x: len(x) > 0, f.read().split('\n')))
+            test_data = [os.path.join(os.path.abspath(new_symlink_path), os.path.basename(t)) for t in test_data]
+        else:
+            test_data = val_data
 
         if augs is not None:
             print('https://github.com/VolkovAK/DarknetDatasetCompiler')
             raise NotImplemented('If you need augmentations with predefined split - create an issue on github, please')
-        return train_data, val_data
+        return train_data, val_data, test_data
 
     def build_random_split(self, source, new_symlink_path, augs):
         original_path = source['path']
         random.seed(42)
-        train_part = source['split']
+        train_part, val_part, test_part = source['split']
         self.debug(f'Scanning {original_path}...')
         imgs = [j for j in os.listdir(original_path) if is_image(j)]
         train_data = []
         val_data = []
+        test_data = []
         self.debug(f'Splitting {original_path}...')
         random.shuffle(imgs)
         if 'use_part' in source:
@@ -84,10 +101,13 @@ class Compiler:
             txt_file = os.path.join(original_path, txt_name)
             img_file = os.path.join(original_path, img_name)
             if os.path.exists(txt_file) and os.path.exists(img_file):
-                if random.randint(0, 100) < train_part:
+                phase = random.randint(0, 100)
+                if phase < train_part:
                     train_data.append(os.path.join(os.path.abspath(new_symlink_path), img_name))
-                else:
+                elif phase < train_part + val_part:
                     val_data.append(os.path.join(os.path.abspath(new_symlink_path), img_name))
+                else:
+                    test_data.append(os.path.join(os.path.abspath(new_symlink_path), img_name))
 
                 random_state = random.getstate()
                 if augs is not None:
@@ -101,7 +121,7 @@ class Compiler:
                     shutil.copy(txt_file, os.path.join(new_symlink_path, txt_name))
                 random.setstate(random_state)
 
-        return train_data, val_data
+        return train_data, val_data, test_data
 
 
     def run(self):
@@ -115,9 +135,11 @@ class Compiler:
         os.makedirs(target_path)
         train_txt = open(os.path.join(target_path, 'train.txt'), 'w')
         val_txt = open(os.path.join(target_path, 'val.txt'), 'w')
+        test_txt = open(os.path.join(target_path, 'test.txt'), 'w')
         readme_txt = open(os.path.join(target_path, 'readme.txt'), 'w')
         total_train = 0
         total_val = 0
+        total_test = 0
         
         for source in cfg['sources']:
             if source['use'] is False:
@@ -142,12 +164,11 @@ class Compiler:
                 os.symlink(original_path, new_symlink_path)
             else:
                 os.makedirs(new_symlink_path, exist_ok=True)
-                #shutil.copytree(original_path, new_symlink_path)
 
             if 'train' in source and 'valid' in source:
-                train_data, val_data = self.build_predefined_split(source, new_symlink_path, augs)
+                train_data, val_data, test_data= self.build_predefined_split(source, new_symlink_path, augs)
             elif 'split' in source:
-                train_data, val_data = self.build_random_split(source, new_symlink_path, augs)
+                train_data, val_data, test_data = self.build_random_split(source, new_symlink_path, augs)
             else:
                 raise Exception('You should specify Split parameter of Train and Val paths')
             train_data = train_data * multiplier
@@ -156,25 +177,32 @@ class Compiler:
                 train_txt.write(d + '\n')
             for d in val_data:
                 val_txt.write(d + '\n')
+            for d in test_data:
+                test_txt.write(d + '\n')
             readme_txt.write(f'Train: {len(train_data)}\n')
             readme_txt.write(f'Valid: {len(val_data)}\n')
+            readme_txt.write(f'Test: {len(test_data)}\n')
             if multiplier != 1:
                 readme_txt.write(f'Multiplier: x{multiplier}\n')
             readme_txt.write('\n')
             self.debug(f'Train: {len(train_data)}')
             self.debug(f'Valid: {len(val_data)}')
-        
+            self.debug(f'Test: {len(test_data)}')
+
             total_train += len(train_data)
             total_val += len(val_data)
 
         train_txt.close()
         val_txt.close()
+        test_txt.close()
         readme_txt.close()
         with open(os.path.join(target_path, 'readme.txt'), 'r') as f:
             readme_data = f.read()
         with open(os.path.join(target_path, 'readme.txt'), 'w') as readme_txt:
-            readme_txt.write(f'Dataset: {cfg["name"]}\n')
-            readme_txt.write(f'TOTAL:\nTrain: {round(total_train/1000)}k\nValid: {round(total_val/1000)}k\n\n')
+            readme_txt.write(f'Dataset: {cfg["name"]}\nTOTAL:\n')
+            readme_txt.write(f'Train: {round(total_train/1000)}k\n')
+            readme_txt.write(f'Valid: {round(total_val/1000)}k\n')
+            readme_txt.write(f'Test: {round(total_test/1000)}k\n\n')
             readme_txt.write(readme_data)
         
 

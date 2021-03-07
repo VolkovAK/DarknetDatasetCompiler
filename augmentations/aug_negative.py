@@ -2,9 +2,10 @@ import albumentations as A
 import numpy as np
 import cv2
 
+
 class Augmentations:
     def __init__(self):
-        self.name = 'negative'
+        pass
 
     def do(self, original):
         img = 255 - original

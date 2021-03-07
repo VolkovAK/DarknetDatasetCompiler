@@ -8,14 +8,14 @@
 			"name": "vehicle_COCO",
 			"path": "/home/admin/COCO_vehicles/",
 			"description": "Images with vehicles from COCO dataset",
-			"split": 80
+			"split": [70, 10, 20]
 		},
 		{
 			"use": true,
 			"name": "vehicle_COCO_aug",
 			"path": "/home/admin/COCO_vehicles/",
 			"description": "Images with vehicles from COCO dataset with augmentations",
-			"split": 80,
+			"split": [70, 10, 20],
 			"augmentations": ["contrast_brightness", "noise"]
 		},
 		{
@@ -23,7 +23,7 @@
 			"name": "KITTI_dataset",
 			"path": "/home/admin/kitti/images/",
 			"description": "Dataset from KITTI",
-			"split": 90,
+			"split": [80, 5, 15],
 			"use_part": 20
 		},
 		{
@@ -31,7 +31,7 @@
 			"name": "Our_frames",
 			"path": "/home/admin/my_dataset",
 			"description": "Frames from our camera, my annotation",
-			"split": 80,
+			"split": [80, 10, 10],
 			"multiplier": 5
 		},
 		{
@@ -40,14 +40,16 @@
 			"path": "/home/admin/old_dataset",
 			"description": "Old dataset with predefined train/test split",
 			"train": "/home/admin/old_dataset/train.txt",
-                        "valid": "/home/admin/old_dataset/val.txt"
+			"valid": "/home/admin/old_dataset/val.txt",
+			"test": "/home/admin/old_dataset/val.txt"
+
 		},
 		{
 			"use": false,
 			"name": "bad_data",
 			"path": "/home/admin/untrusted_dataset/",
 			"description": "Dataset with bad pseudolabeled annotation",
-			"split": 80
+			"split": [50, 20, 30]
 		}
 	]
 }
